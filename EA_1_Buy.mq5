@@ -129,7 +129,7 @@ void onBar_buy(){
                break;
             }   
          }
-         if(((openPrice - interval*_Point) >= currentPrice_2)){
+         if(((openPrice - interval*_Point) >= currentPrice_2) && (num_2 < 19)){
             double latestLot = PositionGetDouble(POSITION_VOLUME);
             //open more positions
             latestLot = NormalizeDouble(latestLot * 1.6, 2);
