@@ -32,10 +32,14 @@ CTrade trade;
 
 datetime globalbartime;
 input double ls = 0.01;
+input int magic_num_2 = 002;
+int interval = 50;
+int count_2 = 0;
 
 //run this function each time the price changes on the chart.
 void OnTick(){
 
+   trade.SetExpertMagicNumber(magic_num_2);
    datetime rightbartime = iTime(_Symbol,_Period, 0);
    if(rightbartime != globalbartime){
       //if there is a new bar run the main function
@@ -66,7 +70,7 @@ void onBar_sell(){
    int num = 0;
    for(int i = PositionsTotal()-1; i >= 0; i--){
       string sym = PositionGetSymbol(i);
-      if(PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL){
+      if(PositionGetInteger(POSITION_MAGIC) == magic_num_2){
          num += 1;
       } 
    }
@@ -81,7 +85,7 @@ void onBar_sell(){
       ulong newTicket = 0;
       for(int i = 0; i <= PositionsTotal()-1; i++){ 
          string sym = PositionGetSymbol(i);
-         if(PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL){
+         if(PositionGetInteger(POSITION_MAGIC) == magic_num_2){
             newTp = PositionGetDouble(POSITION_PRICE_OPEN);
             newTicket = PositionGetInteger(POSITION_TICKET);
             break;
@@ -101,7 +105,7 @@ void onBar_sell(){
       double firstTP = 0;
       for(int i = PositionsTotal()-1; i >= 0; i--){ 
          string sym = PositionGetSymbol(i);
-         if(PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL){
+         if(PositionGetInteger(POSITION_MAGIC) == magic_num_2){
             num_2 += 1;
             firstOpenPrice = PositionGetDouble(POSITION_PRICE_OPEN);
             currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
@@ -109,9 +113,9 @@ void onBar_sell(){
          }   
       }
       // check if trades open is only one then call the function to open the second position
-      if((num_2 == 1)&&((firstOpenPrice + 60*_Point) <= currentPrice)){
+      if((num_2 == 1)&&((firstOpenPrice + interval*_Point) <= currentPrice)){
          //call the function and pass the following arguments into it
-         if((Ask - Bid) > 0.0003)
+         if((Ask - Bid) < 0.0003)
             trade.Sell(lot, NULL, Bid, NULL, firstTP, NULL);
       }else{
          // check if trades open is greater than or equals to two, then call the function to open subsequent positions
@@ -119,24 +123,54 @@ void onBar_sell(){
          double openPrice = 0;
          for(int i = PositionsTotal()-1; i >= 0; i--){ 
             string sym = PositionGetSymbol(i);
-            if(PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL){
+            if(PositionGetInteger(POSITION_MAGIC) == magic_num_2){
                currentPrice_2 = PositionGetDouble(POSITION_PRICE_CURRENT);
                openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
                break;
             }   
          }
-         if(((openPrice + 60*_Point) <= currentPrice_2)){
+         if(((openPrice + interval*_Point) <= currentPrice_2)){
             double latestLot = PositionGetDouble(POSITION_VOLUME);
             //open more positions
             latestLot = NormalizeDouble(latestLot * 1.6, 2);
-            if( (Ask - Bid) > 0.0003)
+            if( (Ask - Bid) < 0.0003)
                trade.Sell(latestLot, NULL, Bid, NULL, NULL, NULL);
                /** 
                call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
                the argument of the first open price
                */
                uniformPointCalculator_sell();
-         }       
+         }else{
+            if(((openPrice + interval*_Point) <= currentPrice_2) && (num_2 >= 19)){
+               if(count_2 == 0){
+                  double latestLot = PositionGetDouble(POSITION_VOLUME);
+                  if((Ask - Bid) < 0.0003){
+                     trade.Sell(latestLot, NULL, Bid, NULL, NULL, NULL);
+                     /** 
+                     call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
+                     the argument of the first open price
+                     */
+                     uniformPointCalculator_sell();
+                     count_2 += 1;
+                  }
+               }else{
+                  if(count_2 == 1){
+                     double latestLot = PositionGetDouble(POSITION_VOLUME);
+                     //open more positions
+                     latestLot = NormalizeDouble(latestLot * 1.6, 2);
+                     if((Ask - Bid) < 0.0003){
+                        trade.Sell(latestLot, NULL, Bid, NULL, NULL, NULL);
+                        /** 
+                        call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
+                        the argument of the first open price
+                        */
+                        uniformPointCalculator_sell();
+                        count_2 = 0;
+                     }
+                  }
+                }       
+             }
+          }       
        }    
    }   
 }
@@ -147,19 +181,19 @@ void uniformPointCalculator_sell(){
    double nextTPSL = 0;
    for(int i = PositionsTotal()-1; i >= 0; i--){ 
       string sym = PositionGetSymbol(i);
-      if(PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL){
+      if(PositionGetInteger(POSITION_MAGIC) == magic_num_2){
          nextTPSL = PositionGetDouble(POSITION_PRICE_OPEN);
          count += 1;
       }
       if(count == 3)break;   
    }
-   nextTPSL = nextTPSL - 5*_Point;
+   nextTPSL = nextTPSL - 10*_Point;
    //loop through all positions that are currently open
    for(int i = PositionsTotal()-1; i >= 0; i--){
       //get the details from the current position such as opening price, lot size, and position id 
       //so we can modify it
       string symbols = PositionGetSymbol(i);
-      if(PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL){
+      if(PositionGetInteger(POSITION_MAGIC) == magic_num_2){
          ulong posTicket = PositionGetInteger(POSITION_TICKET);
          trade.PositionModify(posTicket, 0, nextTPSL);
       }        

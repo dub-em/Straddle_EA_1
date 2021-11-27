@@ -31,7 +31,10 @@ void OnDeinit(const int reason)
 
 //+------------------------------------------------------------------+
 datetime globalbartime;
-input double ls = 0.01;
+input double ls = 0.03; 
+input int magic_num_2 = 002;
+int count_2 = 0;
+int interval = 50;
 
 //run this function each time the price changes on the chart.
 void OnTick(){
@@ -45,6 +48,7 @@ void OnTick(){
 }
 
 //the function containing all the logic
+
 void onBar_sell(){
    /**
    double l_Size = (AccountInfoDouble(ACCOUNT_BALANCE)*0.02)/150000;
@@ -61,7 +65,7 @@ void onBar_sell(){
    int num = 0;
    for(int i = OrdersTotal()-1; i >= 0; i--){
       OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-      if(OrderType() == OP_SELL){
+      if(OrderMagicNumber() == magic_num_2){
          num += 1;
       } 
    } 
@@ -70,14 +74,14 @@ void onBar_sell(){
    if(num == 0){
    
       //open a buy position
-      OrderSend(_Symbol, OP_SELL, lot, Bid, 50, 0, 0);
+      OrderSend(_Symbol, OP_SELL, lot, Bid, 50, 0, 0, NULL, magic_num_2);
       
       //get the details such as opening price and position id from the first opened positions 
       double newTp = 0;
       ulong newTicket = 0;
       for(int i = 0; i <= OrdersTotal()-1; i++){ 
          OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-         if(OrderType() == OP_SELL){
+         if(OrderMagicNumber() == magic_num_2){
             newTp = OrderOpenPrice();
             newTicket = OrderTicket();
             break;
@@ -97,7 +101,7 @@ void onBar_sell(){
       double firstTP = 0;
       for(int i = OrdersTotal()-1; i >= 0; i--){ 
          OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-         if(OrderType() == OP_SELL){
+         if(OrderMagicNumber() == magic_num_2){
             num_2 += 1;
             firstOpenPrice = OrderOpenPrice();
             currentPrice = OrderClosePrice();
@@ -105,13 +109,13 @@ void onBar_sell(){
          }   
       }
       // check if trades open is only one then call the function to open the second position
-      if((num_2 == 1)&&((firstOpenPrice + 60*_Point) <= currentPrice)){
+      if((num_2 == 1)&&((firstOpenPrice + interval*_Point) <= currentPrice)){
          //call the function and pass the following arguments into it
          if((Ask - Bid) < 0.0003){
-            OrderSend(_Symbol, OP_SELL, lot, Bid, 50, 0, 0);
+            OrderSend(_Symbol, OP_SELL, lot, Bid, 50, 0, 0, NULL, magic_num_2);
             for(int i = OrdersTotal()-1; i >= 0; i--){ 
                OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-               if(OrderType() == OP_SELL)break;   
+               if(OrderMagicNumber() == magic_num_2)break;   
             }
             int newTicket = OrderTicket();
             OrderModify(newTicket, NULL, NULL, firstTP, NULL);
@@ -122,26 +126,56 @@ void onBar_sell(){
          double openPrice = 0;
          for(int i = OrdersTotal()-1; i >= 0; i--){ 
             OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-            if(OrderType() == OP_SELL){
+            if(OrderMagicNumber() == magic_num_2){
                currentPrice_2 = OrderClosePrice();
                openPrice = OrderOpenPrice();
                break;
             }   
          }
-         if(((openPrice + 60*_Point) <= currentPrice_2)){
+         if(((openPrice + interval*_Point) <= currentPrice_2) && (num_2 < 19)){
             double latestLot = OrderLots();
             //open more positions
             latestLot = NormalizeDouble(latestLot * 1.6, 2);
             if((Ask - Bid) < 0.0003){
-               OrderSend(_Symbol, OP_SELL, latestLot, Bid, 50, 0, 0);
+               OrderSend(_Symbol, OP_SELL, latestLot, Bid, 50, 0, 0, NULL, magic_num_2);
                /** 
                call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
                the argument of the first open price
                */
                uniformPointCalculator_sell();
             }
+         }else{
+            if(((openPrice + interval*_Point) <= currentPrice_2) && (num_2 >= 19)){
+               if(count_2 == 0){
+                  double latestLot = OrderLots();
+                  if((Ask - Bid) < 0.0003){
+                     OrderSend(_Symbol,OP_SELL, latestLot, Ask, 50, 0, 0, NULL, magic_num_2);
+                     /** 
+                     call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
+                     the argument of the first open price
+                     */
+                     uniformPointCalculator_sell();
+                     count_2 += 1;
+                  }
+               }else{
+                  if(count_2 == 1){
+                     double latestLot = OrderLots();
+                     //open more positions
+                     latestLot = NormalizeDouble(latestLot * 1.6, 2);
+                     if((Ask - Bid) < 0.0003){
+                        OrderSend(_Symbol, OP_SELL, latestLot, Ask, 50, 0, 0, NULL, magic_num_2);
+                        /** 
+                        call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
+                        the argument of the first open price
+                        */
+                        uniformPointCalculator_sell();
+                        count_2 = 0;
+                     }
+                  }
+                }       
+            }
          }       
-       }    
+      }    
    }   
 }
 
@@ -151,13 +185,13 @@ void uniformPointCalculator_sell(){
    double nextTPSL = 0;
    for(int i = OrdersTotal()-1; i >= 0; i--){ 
       OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-      if(OrderType() == OP_SELL){
+      if(OrderMagicNumber() == magic_num_2){
          nextTPSL = OrderOpenPrice();
          count += 1;
       }
       if(count == 3)break;   
    } 
-   nextTPSL = nextTPSL - 5*_Point;
+   nextTPSL = nextTPSL - 10*_Point;
    //loop through all positions that are currently open
    for(int i = OrdersTotal()-1; i >= 0; i--){
       /**
@@ -165,10 +199,7 @@ void uniformPointCalculator_sell(){
          so we can modify it
       */
       OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-      if(OrderType() == OP_BUY){
-         int posTicket = OrderTicket();
-         OrderModify(posTicket, NULL, NULL, nextTPSL, NULL);
-      }else if(OrderType() == OP_SELL){
+      if(OrderMagicNumber() == magic_num_2){
          int posTicket = OrderTicket();
          OrderModify(posTicket, NULL, NULL, nextTPSL, NULL);
       }        
