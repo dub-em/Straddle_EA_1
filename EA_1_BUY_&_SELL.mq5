@@ -36,7 +36,7 @@ input int thisEAMagicNumber = 1111000;
 //int count_2 = 0;
 int count_buy = 0;
 int count_sell = 0;
-int interval = 55;
+int interval = 40;
 input int lotlimit = 100;
 int numofmultiples_buy = 0;
 int numofmultiples_sell = 0;
@@ -49,9 +49,14 @@ int checkidentifier_sell = 0;
 double loop = 0;
 
 // Variables used to store the three highest positions for quick reference
+double multiplier = 100000;
+
+double first_buy = 0;
 double thrd_highestlot_buy = 0;
 double sec_highestlot_buy = 0;
 double highestlot_buy = 0;
+
+double first_sell = 0;
 double thrd_highestlot_sell = 0;
 double sec_highestlot_sell = 0;
 double highestlot_sell = 0;
@@ -83,7 +88,7 @@ void onBar_buy(){
    }
    //set some parameters to be used later
    */
-   int takeProfit = 50; // 4 pips in pippettes
+   int takeProfit = 40; // 4 pips in pippettes
    double lot = ls; 
    
    //loops through all the open positions (buy and sell) to check the total number of position to a type of order
@@ -99,6 +104,7 @@ void onBar_buy(){
       numofmultiples_buy = 0;
       //open a buy position
       trade.Buy(lot, NULL, Ask, NULL, NULL, NULL);
+      first_buy = Ask;
       thrd_highestlot_buy = 0;
       sec_highestlot_buy = 0;
       highestlot_buy = Ask;
@@ -136,7 +142,7 @@ void onBar_buy(){
          }   
       }
       // check if trades open is only one then call the function to open the second position
-      if((num_2 == 1)&&((firstOpenPrice - interval*_Point) >= currentPrice)){
+      if((num_2 == 1)&&((firstOpenPrice - interval*_Point) >= Ask)){
          //call the function and pass the following arguments into it
          if((Ask - Bid) < 0.0005)
             trade.Buy(lot, NULL, Ask, NULL, firstTP, NULL);
@@ -165,7 +171,7 @@ void onBar_buy(){
          }
          //open more positions
          if (num_2 > 1){
-            if(((openPrice - interval*_Point) >= currentPrice_2) && (latestLot_buy < lotlimit)){
+            if(((openPrice - interval*_Point) >= Ask) && (latestLot_buy < lotlimit)){
                if( (Ask - Bid) < 0.0005)
                   trade.Buy(latestLot_buy, NULL, Ask, NULL, NULL, NULL);
                   thrd_highestlot_buy = sec_highestlot_buy;
@@ -177,7 +183,7 @@ void onBar_buy(){
                   */
                   uniformPointCalculator_buy();
             }else{
-               if(((openPrice - interval*_Point) >= currentPrice_2) && (latestLot_buy > lotlimit)){
+               if(((openPrice - interval*_Point) >= Ask) && (latestLot_buy > lotlimit)){
                   if (numofmultiples_buy == 0){
                      newLot_buy = PositionGetDouble(POSITION_VOLUME);
                      newLot_buy = newLot_buy*1.6;
@@ -242,7 +248,7 @@ void onBar_sell(){
    }
    //set some parameters to be used later
    */
-   int takeProfit = 50; // 4 pips in pippettes
+   int takeProfit = 40; // 4 pips in pippettes
    double lot = ls; 
    
    //loops through all the open positions (buy and sell) to check the total number of position to a type of order
@@ -258,6 +264,7 @@ void onBar_sell(){
       numofmultiples_sell = 0;
       //open a buy position
       trade.Sell(lot, NULL, Bid, NULL, NULL, NULL);
+      first_sell = Bid;
       thrd_highestlot_sell = 0;
       sec_highestlot_sell = 0;
       highestlot_sell = Bid;
@@ -294,7 +301,7 @@ void onBar_sell(){
          }   
       }
       // check if trades open is only one then call the function to open the second position
-      if((num_2 == 1)&&((firstOpenPrice + interval*_Point) <= currentPrice)){
+      if((num_2 == 1)&&((firstOpenPrice + interval*_Point) <= Bid)){
          //call the function and pass the following arguments into it
          if((Ask - Bid) < 0.0005)
             trade.Sell(lot, NULL, Bid, NULL, firstTP, NULL);
@@ -323,7 +330,7 @@ void onBar_sell(){
          }
          //open more positions
          if (num_2 > 1){
-            if(((openPrice + interval*_Point) <= currentPrice_2) && (latestLot_sell < lotlimit)){
+            if(((openPrice + interval*_Point) <= Bid) && (latestLot_sell < lotlimit)){
                if( (Ask - Bid) < 0.0005)
                   trade.Sell(latestLot_sell, NULL, Bid, NULL, NULL, NULL);
                   thrd_highestlot_sell = sec_highestlot_sell;
@@ -335,7 +342,7 @@ void onBar_sell(){
                   */
                   uniformPointCalculator_sell();
             }else{
-               if(((openPrice + interval*_Point) <= currentPrice_2) && (latestLot_sell > lotlimit)){
+               if(((openPrice + interval*_Point) <= Bid) && (latestLot_sell > lotlimit)){
                   if (numofmultiples_sell == 0){
                      newLot_sell = PositionGetDouble(POSITION_VOLUME);
                      newLot_sell = newLot_sell*1.6;
@@ -387,7 +394,8 @@ void onBar_sell(){
 
 //defining the function that modifies all the open trades
 void uniformPointCalculator_buy(){
-   double nextTPSL = highestlot_buy + 155*_Point;  
+   double nextTPSL = 56.231777683731956 + 0.3434495*(MathAbs(highestlot_buy-thrd_highestlot_buy)*multiplier) + 0.03663685*(MathAbs(sec_highestlot_buy-thrd_highestlot_buy)*multiplier) + 0.30681265*(MathAbs(highestlot_buy-sec_highestlot_buy)*multiplier) + 0.01972324*(MathAbs(highestlot_buy-first_buy)*multiplier);  
+   nextTPSL = highestlot_buy + nextTPSL*_Point;
    
    //loop through all positions that are currently open
    for(int i = PositionsTotal()-1; i >= 0; i--){
@@ -403,7 +411,8 @@ void uniformPointCalculator_buy(){
 
 //defining the function that modifies all the open trades
 void uniformPointCalculator_sell(){
-   double nextTPSL = highestlot_sell - 155*_Point;  
+   double nextTPSL = 56.231777683731956 + 0.3434495*(MathAbs(highestlot_sell-thrd_highestlot_sell)*multiplier) + 0.03663685*(MathAbs(sec_highestlot_sell-thrd_highestlot_sell)*multiplier) + 0.30681265*(MathAbs(highestlot_sell-sec_highestlot_sell)*multiplier) + 0.01972324*(MathAbs(highestlot_sell-first_sell)*multiplier);  
+   nextTPSL = highestlot_sell - nextTPSL*_Point;  
    
    //loop through all positions that are currently open
    for(int i = PositionsTotal()-1; i >= 0; i--){
