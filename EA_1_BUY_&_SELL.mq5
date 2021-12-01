@@ -33,10 +33,10 @@ CTrade trade;
 datetime globalbartime;
 input double ls = 0.01;
 input int thisEAMagicNumber = 1111000;
-//int count_2 = 0;
+int count_2 = 0;
 int count_buy = 0;
 int count_sell = 0;
-int interval = 40;
+int interval = 35;
 input int lotlimit = 100;
 int numofmultiples_buy = 0;
 int numofmultiples_sell = 0;
@@ -47,19 +47,23 @@ int identifier_sell = 0;
 int checkidentifier_buy = 0;
 int checkidentifier_sell = 0;
 double loop = 0;
+double mult_fact = 1.58;
 
 // Variables used to store the three highest positions for quick reference
 double multiplier = 100000;
+
 
 double first_buy = 0;
 double thrd_highestlot_buy = 0;
 double sec_highestlot_buy = 0;
 double highestlot_buy = 0;
 
+
 double first_sell = 0;
 double thrd_highestlot_sell = 0;
 double sec_highestlot_sell = 0;
 double highestlot_sell = 0;
+
 
 //run this function each time the price changes on the chart.
 void OnTick(){
@@ -73,6 +77,7 @@ void OnTick(){
       globalbartime = rightbartime;
    } 
 }
+
 
 //the function containing all the logic
 void onBar_buy(){
@@ -164,10 +169,10 @@ void onBar_buy(){
          double latestLot_buy = 0;
          if (numofmultiples_buy == 0){
             latestLot_buy = PositionGetDouble(POSITION_VOLUME);
-            latestLot_buy = NormalizeDouble(latestLot_buy * 1.6, 2);
+            latestLot_buy = NormalizeDouble(latestLot_buy * mult_fact, 2);
          }else{
             latestLot_buy = newLot_buy;
-            latestLot_buy = latestLot_buy * 1.6;
+            latestLot_buy = latestLot_buy * mult_fact;
          }
          //open more positions
          if (num_2 > 1){
@@ -186,7 +191,7 @@ void onBar_buy(){
                if(((openPrice - interval*_Point) >= Ask) && (latestLot_buy > lotlimit)){
                   if (numofmultiples_buy == 0){
                      newLot_buy = PositionGetDouble(POSITION_VOLUME);
-                     newLot_buy = newLot_buy*1.6;
+                     newLot_buy = newLot_buy*mult_fact;
                      if ((Ask - Bid) < 0.0005){
                         identifier_buy = numofmultiples_buy+1;
                         loop = MathCeil(newLot_buy/lotlimit);
@@ -206,7 +211,7 @@ void onBar_buy(){
                      }
                    }else{
                      if (numofmultiples_buy > 0){
-                        newLot_buy = newLot_buy*1.6;
+                        newLot_buy = newLot_buy*mult_fact;
                         if ((Ask - Bid) < 0.0005){
                            identifier_buy = numofmultiples_buy+1;
                            loop = MathCeil(newLot_buy/lotlimit);
@@ -234,6 +239,7 @@ void onBar_buy(){
    }
 
 
+
 void onBar_sell(){
 
    //get the bid and ask price
@@ -248,6 +254,7 @@ void onBar_sell(){
    }
    //set some parameters to be used later
    */
+   
    int takeProfit = 40; // 4 pips in pippettes
    double lot = ls; 
    
@@ -321,12 +328,12 @@ void onBar_sell(){
             }   
          }
          double latestLot_sell = 0;
-         if (numofmultiples_buy == 0){
+         if (numofmultiples_sell == 0){
             latestLot_sell = PositionGetDouble(POSITION_VOLUME);
-            latestLot_sell = NormalizeDouble(latestLot_sell * 1.6, 2);
+            latestLot_sell = NormalizeDouble(latestLot_sell * mult_fact, 2);
          }else{
             latestLot_sell = newLot_sell;
-            latestLot_sell = latestLot_sell * 1.6;
+            latestLot_sell = latestLot_sell * mult_fact;
          }
          //open more positions
          if (num_2 > 1){
@@ -345,7 +352,7 @@ void onBar_sell(){
                if(((openPrice + interval*_Point) <= Bid) && (latestLot_sell > lotlimit)){
                   if (numofmultiples_sell == 0){
                      newLot_sell = PositionGetDouble(POSITION_VOLUME);
-                     newLot_sell = newLot_sell*1.6;
+                     newLot_sell = newLot_sell*mult_fact;
                      if ((Ask - Bid) < 0.0005){
                         identifier_sell = numofmultiples_sell+1;
                         loop = MathCeil(newLot_sell/lotlimit);
@@ -365,7 +372,7 @@ void onBar_sell(){
                      }
                    }else{
                      if (numofmultiples_sell > 0){
-                        newLot_sell = newLot_sell*1.6;
+                        newLot_sell = newLot_sell*mult_fact;
                         if ((Ask - Bid) < 0.0005){
                            identifier_sell = numofmultiples_sell+1;
                            loop = MathCeil(newLot_sell/lotlimit);
@@ -408,6 +415,7 @@ void uniformPointCalculator_buy(){
       }        
    }    
 }
+
 
 //defining the function that modifies all the open trades
 void uniformPointCalculator_sell(){
