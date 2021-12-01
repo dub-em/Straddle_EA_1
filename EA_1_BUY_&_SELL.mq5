@@ -33,9 +33,6 @@ CTrade trade;
 datetime globalbartime;
 input double ls = 0.01;
 input int thisEAMagicNumber = 1111000;
-int count_2 = 0;
-int count_buy = 0;
-int count_sell = 0;
 int interval = 35;
 input int lotlimit = 100;
 int numofmultiples_buy = 0;
@@ -44,8 +41,6 @@ double newLot_buy = 0;
 double newLot_sell = 0;
 int identifier_buy = 0;
 int identifier_sell = 0;
-int checkidentifier_buy = 0;
-int checkidentifier_sell = 0;
 double loop = 0;
 double mult_fact = 1.58;
 
