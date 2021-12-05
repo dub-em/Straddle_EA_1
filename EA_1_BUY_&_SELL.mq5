@@ -33,7 +33,7 @@ CTrade trade;
 datetime globalbartime;
 input double ls = 0.01;
 input int thisEAMagicNumber = 1111000;
-int interval = 35;
+int interval = 38.5;
 input int lotlimit = 100;
 int numofmultiples_buy = 0;
 int numofmultiples_sell = 0;
@@ -43,6 +43,7 @@ int identifier_buy = 0;
 int identifier_sell = 0;
 double loop = 0;
 double mult_fact = 1.58;
+double spread = 0.0003;
 
 // Variables used to store the three highest positions for quick reference
 double multiplier = 100000;
@@ -115,49 +116,40 @@ void onBar_buy(){
       for(int i = 0; i <= PositionsTotal()-1; i++){ 
          string sym = PositionGetSymbol(i);
          if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY) && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
-            newTp = PositionGetDouble(POSITION_PRICE_OPEN);
             newTicket = PositionGetInteger(POSITION_TICKET);
             break;
          }   
       }
       //add the take profit defined earlier to the opening price
-      newTp += takeProfit*_Point;
+      newTp = highestlot_buy + takeProfit*_Point;
       
       //modiify the first opened positions take profit and stop loss
       trade.PositionModify(newTicket, 0, newTp);
       
    }else{
       //get the details such as opening price and position id from the first opened positions so we can modify other positions
-      double firstOpenPrice = 0;
-      double currentPrice = 0;
       double firstTP = 0;
       int num_2 = 0;
       for(int i = 0; i <= PositionsTotal()-1; i++){ 
          string sym = PositionGetSymbol(i);
          if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY)  && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
-            firstOpenPrice = PositionGetDouble(POSITION_PRICE_OPEN);
-            currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
             firstTP = PositionGetDouble(POSITION_TP);
             num_2 += 1;
          }   
       }
       // check if trades open is only one then call the function to open the second position
-      if((num_2 == 1)&&((firstOpenPrice - interval*_Point) >= Ask)){
+      if((num_2 <= 2)&&((highestlot_buy - interval*_Point) >= Ask)){
          //call the function and pass the following arguments into it
-         if((Ask - Bid) < 0.0005)
+         if((Ask - Bid) < spread)
             trade.Buy(lot, NULL, Ask, NULL, firstTP, NULL);
             thrd_highestlot_buy = sec_highestlot_buy;
             sec_highestlot_buy = highestlot_buy;
             highestlot_buy = Ask;
       }else{
          // check if trades open is greater than or equals to two, then call the function to open subsequent positions
-         double currentPrice_2 = 0;
-         double openPrice = 0;
          for(int i = PositionsTotal()-1; i >= 0; i--){ 
             string sym = PositionGetSymbol(i);
             if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY) && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
-               currentPrice_2 = PositionGetDouble(POSITION_PRICE_CURRENT);
-               openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
                break;
             }   
          }
@@ -170,9 +162,9 @@ void onBar_buy(){
             latestLot_buy = latestLot_buy * mult_fact;
          }
          //open more positions
-         if (num_2 > 1){
-            if(((openPrice - interval*_Point) >= Ask) && (latestLot_buy < lotlimit)){
-               if( (Ask - Bid) < 0.0005)
+         if (num_2 > 2){
+            if(((highestlot_buy - interval*_Point) >= Ask) && (latestLot_buy < lotlimit)){
+               if( (Ask - Bid) < spread)
                   trade.Buy(latestLot_buy, NULL, Ask, NULL, NULL, NULL);
                   thrd_highestlot_buy = sec_highestlot_buy;
                   sec_highestlot_buy = highestlot_buy;
@@ -183,11 +175,11 @@ void onBar_buy(){
                   */
                   uniformPointCalculator_buy();
             }else{
-               if(((openPrice - interval*_Point) >= Ask) && (latestLot_buy > lotlimit)){
+               if(((highestlot_buy - interval*_Point) >= Ask) && (latestLot_buy > lotlimit)){
                   if (numofmultiples_buy == 0){
                      newLot_buy = PositionGetDouble(POSITION_VOLUME);
                      newLot_buy = newLot_buy*mult_fact;
-                     if ((Ask - Bid) < 0.0005){
+                     if ((Ask - Bid) < spread){
                         identifier_buy = numofmultiples_buy+1;
                         loop = MathCeil(newLot_buy/lotlimit);
                         for(int i=1; i<=loop; i++){
@@ -207,7 +199,7 @@ void onBar_buy(){
                    }else{
                      if (numofmultiples_buy > 0){
                         newLot_buy = newLot_buy*mult_fact;
-                        if ((Ask - Bid) < 0.0005){
+                        if ((Ask - Bid) < spread){
                            identifier_buy = numofmultiples_buy+1;
                            loop = MathCeil(newLot_buy/lotlimit);
                            for(int i=1; i<=loop; i++){
@@ -277,48 +269,39 @@ void onBar_sell(){
       for(int i = 0; i <= PositionsTotal()-1; i++){ 
          string sym = PositionGetSymbol(i);
          if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL)  && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
-            newTp = PositionGetDouble(POSITION_PRICE_OPEN);
             newTicket = PositionGetInteger(POSITION_TICKET);
             break;
          }   
       }
       //add the take profit defined earlier to the opening price
-      newTp -= takeProfit*_Point;
+      newTp = highestlot_sell - takeProfit*_Point;
       
       //modiify the first opened positions take profit and stop loss
       trade.PositionModify(newTicket, 0, newTp);  
    }else{
       //get the details such as opening price and position id from the first opened positions so we can modify other positions
-      double firstOpenPrice = 0;
-      double currentPrice = 0;
       double firstTP = 0;
       int num_2 = 0;
       for(int i = 0; i <= PositionsTotal()-1; i++){ 
          string sym = PositionGetSymbol(i);
          if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL)  && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
-            firstOpenPrice = PositionGetDouble(POSITION_PRICE_OPEN);
-            currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
             firstTP = PositionGetDouble(POSITION_TP);
             num_2 += 1;
          }   
       }
       // check if trades open is only one then call the function to open the second position
-      if((num_2 == 1)&&((firstOpenPrice + interval*_Point) <= Bid)){
+      if((num_2 <= 2)&&((highestlot_sell + interval*_Point) <= Bid)){
          //call the function and pass the following arguments into it
-         if((Ask - Bid) < 0.0005)
+         if((Ask - Bid) < spread)
             trade.Sell(lot, NULL, Bid, NULL, firstTP, NULL);
             thrd_highestlot_sell = sec_highestlot_sell;
             sec_highestlot_sell = highestlot_sell;
             highestlot_sell = Bid;
       }else{
          // check if trades open is greater than or equals to two, then call the function to open subsequent positions
-         double currentPrice_2 = 0;
-         double openPrice = 0;
          for(int i = PositionsTotal()-1; i >= 0; i--){ 
             string sym = PositionGetSymbol(i);
             if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL) && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
-               currentPrice_2 = PositionGetDouble(POSITION_PRICE_CURRENT);
-               openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
                break;
             }   
          }
@@ -331,9 +314,9 @@ void onBar_sell(){
             latestLot_sell = latestLot_sell * mult_fact;
          }
          //open more positions
-         if (num_2 > 1){
-            if(((openPrice + interval*_Point) <= Bid) && (latestLot_sell < lotlimit)){
-               if( (Ask - Bid) < 0.0005)
+         if (num_2 > 2){
+            if(((highestlot_sell + interval*_Point) <= Bid) && (latestLot_sell < lotlimit)){
+               if( (Ask - Bid) < spread)
                   trade.Sell(latestLot_sell, NULL, Bid, NULL, NULL, NULL);
                   thrd_highestlot_sell = sec_highestlot_sell;
                   sec_highestlot_sell = highestlot_sell;
@@ -344,11 +327,11 @@ void onBar_sell(){
                   */
                   uniformPointCalculator_sell();
             }else{
-               if(((openPrice + interval*_Point) <= Bid) && (latestLot_sell > lotlimit)){
+               if(((highestlot_sell + interval*_Point) <= Bid) && (latestLot_sell > lotlimit)){
                   if (numofmultiples_sell == 0){
                      newLot_sell = PositionGetDouble(POSITION_VOLUME);
                      newLot_sell = newLot_sell*mult_fact;
-                     if ((Ask - Bid) < 0.0005){
+                     if ((Ask - Bid) < spread){
                         identifier_sell = numofmultiples_sell+1;
                         loop = MathCeil(newLot_sell/lotlimit);
                         for(int i=1; i<=loop; i++){
@@ -368,7 +351,7 @@ void onBar_sell(){
                    }else{
                      if (numofmultiples_sell > 0){
                         newLot_sell = newLot_sell*mult_fact;
-                        if ((Ask - Bid) < 0.0005){
+                        if ((Ask - Bid) < spread){
                            identifier_sell = numofmultiples_sell+1;
                            loop = MathCeil(newLot_sell/lotlimit);
                            for(int i=1; i<=loop; i++){
@@ -386,8 +369,8 @@ void onBar_sell(){
                            uniformPointCalculator_sell();
                         }
                       }
-                    }
-               }       
+                   }
+                }       
              }
           }       
        }    
