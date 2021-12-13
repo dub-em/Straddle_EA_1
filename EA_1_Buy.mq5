@@ -54,7 +54,6 @@ double highestlot_buy = 0;
 
 //run this function each time the price changes on the chart.
 void OnTick(){
-   
    trade.SetExpertMagicNumber(thisEAMagicNumber);
    datetime rightbartime = iTime(_Symbol,_Period, 0);
    if(rightbartime != globalbartime){
@@ -63,7 +62,6 @@ void OnTick(){
       globalbartime = rightbartime;
    } 
 }
-
 
 //the function containing all the logic
 void onBar_buy(){
@@ -121,11 +119,12 @@ void onBar_buy(){
       // check if trades open is only one then call the function to open the second position
       if((num_2 <= num_firstlot)&&((highestlot_buy - interval*_Point) >= Ask)){
          //call the function and pass the following arguments into it
-         if((Ask - Bid) < spread)
+         if((Ask - Bid) < spread){
             trade.Buy(lot, NULL, Ask, NULL, firstTP, NULL);
             thrd_highestlot_buy = sec_highestlot_buy;
             sec_highestlot_buy = highestlot_buy;
             highestlot_buy = Ask;
+         }
       }else{
          // check if trades open is greater than or equals to two, then call the function to open subsequent positions
          for(int i = PositionsTotal()-1; i >= 0; i--){ 
@@ -139,28 +138,25 @@ void onBar_buy(){
             latestLot_buy = PositionGetDouble(POSITION_VOLUME);
             latestLot_buy = NormalizeDouble(latestLot_buy * mult_fact, 2);
          }else{
-            latestLot_buy = newLot_buy;
-            latestLot_buy = latestLot_buy * mult_fact;
+            latestLot_buy = newLot_buy * mult_fact;
          }
-         //open more positions
          if (num_2 > num_firstlot){
             if(((highestlot_buy - interval*_Point) >= Ask) && (latestLot_buy < lotlimit)){
-               if( (Ask - Bid) < spread)
+               if((Ask - Bid) < spread){
                   trade.Buy(latestLot_buy, NULL, Ask, NULL, NULL, NULL);
                   thrd_highestlot_buy = sec_highestlot_buy;
                   sec_highestlot_buy = highestlot_buy;
                   highestlot_buy = Ask;
-                  /** 
-                  call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
-                  the argument of the first open price
-                  */
+                  /** call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
+                  the argument of the first open price*/
                   uniformPointCalculator_buy();
+               }
             }else{
                if(((highestlot_buy - interval*_Point) >= Ask) && (latestLot_buy > lotlimit)){
                   if (numofmultiples_buy == 0){
-                     newLot_buy = PositionGetDouble(POSITION_VOLUME);
-                     newLot_buy = newLot_buy*mult_fact;
                      if ((Ask - Bid) < spread){
+                        newLot_buy = PositionGetDouble(POSITION_VOLUME);
+                        newLot_buy = newLot_buy*mult_fact;
                         identifier_buy = numofmultiples_buy+1;
                         loop = MathCeil(newLot_buy/lotlimit);
                         for(int i=1; i<=loop; i++){
@@ -179,8 +175,8 @@ void onBar_buy(){
                      }
                    }else{
                      if (numofmultiples_buy > 0){
-                        newLot_buy = newLot_buy*mult_fact;
                         if ((Ask - Bid) < spread){
+                           newLot_buy = newLot_buy*mult_fact;
                            identifier_buy = numofmultiples_buy+1;
                            loop = MathCeil(newLot_buy/lotlimit);
                            for(int i=1; i<=loop; i++){
@@ -196,15 +192,15 @@ void onBar_buy(){
                            highestlot_buy = Ask;
                            numofmultiples_buy += 1;
                            uniformPointCalculator_buy();
-                        }
                       }
-                    }
-                 }       
-               }       
-            }
-         }    
-      }   
-   }
+                   }
+                 }
+              }       
+            }       
+         }
+      }    
+   }   
+}
    
 
 //defining the function that modifies all the open trades

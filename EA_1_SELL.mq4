@@ -11,9 +11,7 @@
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
-  {
-//---
-   
+  {  
 //---
    return(INIT_SUCCEEDED);
   }
@@ -23,7 +21,6 @@ int OnInit()
 void OnDeinit(const int reason)
   {
 //---
-   
   }
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
@@ -31,14 +28,28 @@ void OnDeinit(const int reason)
 
 //+------------------------------------------------------------------+
 datetime globalbartime;
-input double ls = 0.03; 
-input int magic_num_2 = 002;
-int count_2 = 0;
-int interval = 50;
+input double ls = 0.01;
+input int magic_num = 002; 
+int interval = 39;
+input int lotlimit = 100;
+int numofmultiples_sell = 0;
+double newLot_sell = 0;
+int identifier_sell = 0;
+double loop = 0;
+double mult_fact = 1.58;
+double spread = 0.0003;
+int num_firstlot = 1;
+
+// Variables used to store the three highest positions for quick reference
+double multiplier = 100000;
+
+double first_sell = 0;
+double thrd_highestlot_sell = 0;
+double sec_highestlot_sell = 0;
+double highestlot_sell = 0;
 
 //run this function each time the price changes on the chart.
 void OnTick(){
-
    datetime rightbartime = iTime(_Symbol,_Period, 0);
    if(rightbartime != globalbartime){
       //if there is a new bar run the main function
@@ -48,158 +59,156 @@ void OnTick(){
 }
 
 //the function containing all the logic
-
 void onBar_sell(){
-   /**
-   double l_Size = (AccountInfoDouble(ACCOUNT_BALANCE)*0.02)/150000;
-   if(l_Size < 0.01){
-      l_Size = 0.01;
-   }else{
-      l_Size = NormalizeDouble(l_Size, 2);
-   }
-   //set some parameters to be used later
-   */
-   int takeProfit = 50; // 5 pips in pippettes
+   int takeProfit = 40; // 4 pips in pippettes
    double lot = ls;
    
    int num = 0;
    for(int i = OrdersTotal()-1; i >= 0; i--){
       OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-      if(OrderMagicNumber() == magic_num_2){
+      if(OrderMagicNumber() == magic_num){
          num += 1;
       } 
    } 
-   
    //check if there are no open positions currently
    if(num == 0){
-   
+      numofmultiples_sell = 0;
       //open a buy position
-      OrderSend(_Symbol, OP_SELL, lot, Bid, 50, 0, 0, NULL, magic_num_2);
+      OrderSend(_Symbol, OP_SELL, lot, Bid, 50, 0, 0, NULL, magic_num);
+      first_sell = Bid;
+      thrd_highestlot_sell = 0;
+      sec_highestlot_sell = 0;
+      highestlot_sell = Bid;
       
       //get the details such as opening price and position id from the first opened positions 
       double newTp = 0;
       ulong newTicket = 0;
       for(int i = 0; i <= OrdersTotal()-1; i++){ 
          OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-         if(OrderMagicNumber() == magic_num_2){
-            newTp = OrderOpenPrice();
+         if(OrderMagicNumber() == magic_num){
             newTicket = OrderTicket();
             break;
          }   
       }
       //add the take profit defined earlier to the opening price
-      newTp -= takeProfit*_Point;
+      newTp = highestlot_sell - takeProfit*_Point;
       
       //modiify the first opened positions take profit and stop loss
       OrderModify(newTicket, NULL, NULL, newTp, NULL);
       
    }else{  
       //get the details such as opening price and position id from the first opened positions so we can modify other positions
-      int num_2 = 0;
-      double firstOpenPrice = 0;
-      double currentPrice = 0;
       double firstTP = 0;
+      int num_2 = 0;
       for(int i = OrdersTotal()-1; i >= 0; i--){ 
          OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-         if(OrderMagicNumber() == magic_num_2){
-            num_2 += 1;
-            firstOpenPrice = OrderOpenPrice();
-            currentPrice = OrderClosePrice();
+         if(OrderMagicNumber() == magic_num){
             firstTP = OrderTakeProfit();
+            num_2 += 1;
          }   
       }
       // check if trades open is only one then call the function to open the second position
-      if((num_2 == 1)&&((firstOpenPrice + interval*_Point) <= currentPrice)){
+      if((num_2 <= num_firstlot)&&((highestlot_sell + interval*_Point) <= Bid)){
          //call the function and pass the following arguments into it
-         if((Ask - Bid) < 0.0003){
-            OrderSend(_Symbol, OP_SELL, lot, Bid, 50, 0, 0, NULL, magic_num_2);
+         if((Ask - Bid) < spread){
+            OrderSend(_Symbol, OP_SELL, lot, Bid, 50, 0, 0, NULL, magic_num);
+            thrd_highestlot_sell = sec_highestlot_sell;
+            sec_highestlot_sell = highestlot_sell;
+            highestlot_sell = Bid;
             for(int i = OrdersTotal()-1; i >= 0; i--){ 
                OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-               if(OrderMagicNumber() == magic_num_2)break;   
+               if(OrderMagicNumber() == magic_num)break;   
             }
             int newTicket = OrderTicket();
             OrderModify(newTicket, NULL, NULL, firstTP, NULL);
          }
       }else{
          // check if trades open is greater than or equals to two, then call the function to open subsequent positions
-         double currentPrice_2 = 0;
-         double openPrice = 0;
          for(int i = OrdersTotal()-1; i >= 0; i--){ 
             OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-            if(OrderMagicNumber() == magic_num_2){
-               currentPrice_2 = OrderClosePrice();
-               openPrice = OrderOpenPrice();
+            if(OrderMagicNumber() == magic_num){
                break;
             }   
          }
-         if(((openPrice + interval*_Point) <= currentPrice_2) && (num_2 < 19)){
-            double latestLot = OrderLots();
-            //open more positions
-            latestLot = NormalizeDouble(latestLot * 1.6, 2);
-            if((Ask - Bid) < 0.0003){
-               OrderSend(_Symbol, OP_SELL, latestLot, Bid, 50, 0, 0, NULL, magic_num_2);
-               /** 
-               call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
-               the argument of the first open price
-               */
-               uniformPointCalculator_sell();
-            }
+         double latestLot_sell = 0;
+         if (numofmultiples_sell == 0){
+            latestLot_sell = OrderLots();
+            latestLot_sell = NormalizeDouble(latestLot_sell * mult_fact, 2);
          }else{
-            if(((openPrice + interval*_Point) <= currentPrice_2) && (num_2 >= 19)){
-               if(count_2 == 0){
-                  double latestLot = OrderLots();
-                  if((Ask - Bid) < 0.0003){
-                     OrderSend(_Symbol,OP_SELL, latestLot, Ask, 50, 0, 0, NULL, magic_num_2);
-                     /** 
-                     call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
-                     the argument of the first open price
-                     */
-                     uniformPointCalculator_sell();
-                     count_2 += 1;
-                  }
-               }else{
-                  if(count_2 == 1){
-                     double latestLot = OrderLots();
-                     //open more positions
-                     latestLot = NormalizeDouble(latestLot * 1.6, 2);
-                     if((Ask - Bid) < 0.0003){
-                        OrderSend(_Symbol, OP_SELL, latestLot, Ask, 50, 0, 0, NULL, magic_num_2);
-                        /** 
-                        call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
-                        the argument of the first open price
-                        */
+            latestLot_sell = newLot_sell * mult_fact;
+          }
+         if(num_2 > num_firstlot){
+            if(((highestlot_sell + interval*_Point) <= Bid) && (latestLot_sell < lotlimit)){
+               if((Ask - Bid) < spread)
+                  OrderSend(_Symbol, OP_SELL, latestLot_sell, Bid, 50, 0, 0, NULL, magic_num);
+                  thrd_highestlot_sell = sec_highestlot_sell;
+                  sec_highestlot_sell = highestlot_sell;
+                  highestlot_sell = Bid;
+                  /** call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
+                  the argument of the first open price*/
+                  uniformPointCalculator_sell();
+            }else{
+               if(((highestlot_sell + interval*_Point) <= Bid) && (latestLot_sell > lotlimit)){
+                  if (numofmultiples_sell == 0){
+                     if ((Ask - Bid) < spread){
+                        newLot_sell = OrderLots();
+                        newLot_sell = newLot_sell*mult_fact;
+                        identifier_sell = numofmultiples_sell+1;
+                        loop = MathCeil(newLot_sell/lotlimit);
+                        for(int i=1; i<=loop; i++){
+                           if(i == loop){
+                              double lastLot_sell = newLot_sell - (lotlimit * (i-1));
+                              OrderSend(_Symbol, OP_SELL, NormalizeDouble(lastLot_sell, 2), Bid, 50, 0, 0, identifier_sell, magic_num);
+                           }else{
+                              OrderSend(_Symbol, OP_SELL, lotlimit, Bid, 50, 0, 0, identifier_sell, magic_num);
+                            }    
+                        }
+                        thrd_highestlot_sell = sec_highestlot_sell;
+                        sec_highestlot_sell = highestlot_sell;
+                        highestlot_sell = Bid;
+                        numofmultiples_sell += 1;
                         uniformPointCalculator_sell();
-                        count_2 = 0;
                      }
-                  }
-                }       
-            }
-         }       
-      }    
-   }   
+                   }else{
+                     if (numofmultiples_sell > 0){
+                        if ((Ask - Bid) < spread){
+                           newLot_sell = newLot_sell*mult_fact;
+                           identifier_sell = numofmultiples_sell+1;
+                           loop = MathCeil(newLot_sell/lotlimit);
+                           for(int i=1; i<=loop; i++){
+                              if(i == loop){
+                                 double lastLot_sell = newLot_sell - (lotlimit * (loop-1));
+                                 OrderSend(_Symbol, OP_SELL, NormalizeDouble(lastLot_sell, 2), Bid, 50, 0, 0, identifier_sell, magic_num);
+                              }else{
+                                 OrderSend(_Symbol, OP_SELL, lotlimit, Bid, 50, 0, 0, identifier_sell, magic_num);
+                               }
+                           }
+                           thrd_highestlot_sell = sec_highestlot_sell;
+                           sec_highestlot_sell = highestlot_sell;
+                           highestlot_sell = Bid;
+                           numofmultiples_sell += 1;
+                           uniformPointCalculator_sell();
+                       }
+                    }
+                 }
+              }    
+           }
+         }     
+      }
+   }
 }
 
 //defining the function that modifies all the open trades
 void uniformPointCalculator_sell(){
-   int count = 0;
-   double nextTPSL = 0;
-   for(int i = OrdersTotal()-1; i >= 0; i--){ 
-      OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-      if(OrderMagicNumber() == magic_num_2){
-         nextTPSL = OrderOpenPrice();
-         count += 1;
-      }
-      if(count == 3)break;   
-   } 
-   nextTPSL = nextTPSL - 10*_Point;
+   double nextTPSL = 56.231777683731956 + 0.3434495*(MathAbs(highestlot_sell-thrd_highestlot_sell)*multiplier) + 0.03663685*(MathAbs(sec_highestlot_sell-thrd_highestlot_sell)*multiplier) + 0.30681265*(MathAbs(highestlot_sell-sec_highestlot_sell)*multiplier) + 0.01972324*(MathAbs(highestlot_sell-first_sell)*multiplier);  
+   nextTPSL = highestlot_sell - nextTPSL*_Point;
+   
    //loop through all positions that are currently open
    for(int i = OrdersTotal()-1; i >= 0; i--){
-      /**
-         get the details from the current position such as opening price, lot size, and position id 
-         so we can modify it
-      */
+      /**get the details from the current position such as opening price, lot size, and position id 
+         so we can modify it*/
       OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-      if(OrderMagicNumber() == magic_num_2){
+      if(OrderMagicNumber() == magic_num){
          int posTicket = OrderTicket();
          OrderModify(posTicket, NULL, NULL, nextTPSL, NULL);
       }        

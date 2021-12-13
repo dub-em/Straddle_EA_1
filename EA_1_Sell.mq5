@@ -137,8 +137,7 @@ void onBar_sell(){
             latestLot_sell = PositionGetDouble(POSITION_VOLUME);
             latestLot_sell = NormalizeDouble(latestLot_sell * mult_fact, 2);
          }else{
-            latestLot_sell = newLot_sell;
-            latestLot_sell = latestLot_sell * mult_fact;
+            latestLot_sell = newLot_sell * mult_fact;
          }
          //open more positions
          if (num_2 > num_firstlot){
@@ -148,17 +147,15 @@ void onBar_sell(){
                   thrd_highestlot_sell = sec_highestlot_sell;
                   sec_highestlot_sell = highestlot_sell;
                   highestlot_sell = Bid;
-                  /** 
-                  call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
-                  the argument of the first open price
-                  */
+                  /**call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
+                  the argument of the first open price*/
                   uniformPointCalculator_sell();
             }else{
                if(((highestlot_sell + interval*_Point) <= Bid) && (latestLot_sell > lotlimit)){
                   if (numofmultiples_sell == 0){
-                     newLot_sell = PositionGetDouble(POSITION_VOLUME);
-                     newLot_sell = newLot_sell*mult_fact;
                      if ((Ask - Bid) < spread){
+                        newLot_sell = PositionGetDouble(POSITION_VOLUME);
+                        newLot_sell = newLot_sell*mult_fact;
                         identifier_sell = numofmultiples_sell+1;
                         loop = MathCeil(newLot_sell/lotlimit);
                         for(int i=1; i<=loop; i++){
@@ -177,8 +174,8 @@ void onBar_sell(){
                      }
                    }else{
                      if (numofmultiples_sell > 0){
-                        newLot_sell = newLot_sell*mult_fact;
                         if ((Ask - Bid) < spread){
+                           newLot_sell = newLot_sell*mult_fact;
                            identifier_sell = numofmultiples_sell+1;
                            loop = MathCeil(newLot_sell/lotlimit);
                            for(int i=1; i<=loop; i++){
