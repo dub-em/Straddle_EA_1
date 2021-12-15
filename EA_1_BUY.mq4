@@ -30,7 +30,7 @@ void OnDeinit(const int reason)
 datetime globalbartime;
 input double ls = 0.01;
 input int magic_num = 001; 
-int interval = 39;
+input int interval = 39;
 input int lotlimit = 100;
 int numofmultiples_buy = 0;
 double newLot_buy = 0;
