@@ -103,7 +103,11 @@ void onBar_buy(){
       newTp = highestlot_buy + takeProfit*_Point;
       
       //modiify the first opened positions take profit and stop loss
-      trade.PositionModify(newTicket, 0, newTp);
+      if (Ask > newTp){
+         trade.PositionClose(newTicket);
+      }else{
+         trade.PositionModify(newTicket, 0, newTp);
+      }
       
    }else{
       //get the details such as opening price and position id from the first opened positions so we can modify other positions
@@ -207,6 +211,7 @@ void onBar_buy(){
 void uniformPointCalculator_buy(){
    double nextTPSL = 56.231777683731956 + 0.3434495*(MathAbs(highestlot_buy-thrd_highestlot_buy)*multiplier) + 0.03663685*(MathAbs(sec_highestlot_buy-thrd_highestlot_buy)*multiplier) + 0.30681265*(MathAbs(highestlot_buy-sec_highestlot_buy)*multiplier) + 0.01972324*(MathAbs(highestlot_buy-first_buy)*multiplier);  
    nextTPSL = highestlot_buy + nextTPSL*_Point;
+   double Ask=NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);
    
    //loop through all positions that are currently open
    for(int i = PositionsTotal()-1; i >= 0; i--){
@@ -215,7 +220,11 @@ void uniformPointCalculator_buy(){
       string symbols = PositionGetSymbol(i);
       if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY) && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
          ulong posTicket = PositionGetInteger(POSITION_TICKET);
-         trade.PositionModify(posTicket, 0, nextTPSL);
+         if (Ask > nextTPSL){
+            trade.PositionClose(posTicket);
+         }else{
+            trade.PositionModify(posTicket, 0, nextTPSL);
+         }
       }        
    }    
 }

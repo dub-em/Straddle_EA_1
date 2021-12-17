@@ -94,7 +94,11 @@ void onBar_sell(){
       newTp = highestlot_sell - takeProfit*_Point;
       
       //modiify the first opened positions take profit and stop loss
-      OrderModify(newTicket, NULL, NULL, newTp, NULL);
+      if (Bid < newTp){
+         OrderClose(newTicket, lot, Bid, 50);
+      }else{
+         OrderModify(newTicket, NULL, NULL, newTp, NULL);
+      }
       
    }else{  
       //get the details such as opening price and position id from the first opened positions so we can modify other positions
@@ -120,7 +124,11 @@ void onBar_sell(){
                if(OrderMagicNumber() == magic_num)break;   
             }
             int newTicket = OrderTicket();
-            OrderModify(newTicket, NULL, NULL, firstTP, NULL);
+            if (Bid < firstTP){
+               OrderClose(newTicket, lot, Bid, 50);
+            }else{
+               OrderModify(newTicket, NULL, NULL, firstTP, NULL);
+            }
          }
       }else{
          // check if trades open is greater than or equals to two, then call the function to open subsequent positions
@@ -210,7 +218,12 @@ void uniformPointCalculator_sell(){
       OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
       if(OrderMagicNumber() == magic_num){
          int posTicket = OrderTicket();
-         OrderModify(posTicket, NULL, NULL, nextTPSL, NULL);
+         double close_lot = OrderLots();
+         if (Bid < nextTPSL){
+            OrderClose(posTicket, close_lot, Bid, 50);
+         }else{
+            OrderModify(posTicket, NULL, NULL, nextTPSL, NULL);
+         }
       }        
    }    
 }
