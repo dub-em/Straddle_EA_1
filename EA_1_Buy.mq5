@@ -211,6 +211,12 @@ void onBar_buy(){
 void uniformPointCalculator_buy(){
    double nextTPSL = 56.231777683731956 + 0.3434495*(MathAbs(highestlot_buy-thrd_highestlot_buy)*multiplier) + 0.03663685*(MathAbs(sec_highestlot_buy-thrd_highestlot_buy)*multiplier) + 0.30681265*(MathAbs(highestlot_buy-sec_highestlot_buy)*multiplier) + 0.01972324*(MathAbs(highestlot_buy-first_buy)*multiplier);  
    nextTPSL = highestlot_buy + nextTPSL*_Point;
+   if((nextTPSL-highestlot_buy) < 0.0015 && PositionsTotal() > 6 && PositionsTotal() < 13){
+      nextTPSL += 0.0005; //add five pips
+   }else if(((nextTPSL-highestlot_buy) < 0.0018) && PositionsTotal() > 13){
+      nextTPSL += 0.0009; 
+   }
+   
    double Ask=NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);
    
    //loop through all positions that are currently open
@@ -225,6 +231,6 @@ void uniformPointCalculator_buy(){
          }else{
             trade.PositionModify(posTicket, 0, nextTPSL);
          }
-      }        
+      }  
    }    
 }
