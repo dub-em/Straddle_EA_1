@@ -9,13 +9,16 @@
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
-int OnInit()
-  {
-//---
-   
-//---
-   return(INIT_SUCCEEDED);
-  }
+int OnInit(){
+   //the account id of you want the bot to work on, and we don not exactly need an alert i just added it 
+   if(AccountInfoInteger(ACCOUNT_LOGIN) == 1601948680){
+      Alert("Authorization of account was successfull");
+      return(INIT_SUCCEEDED);
+   }else{
+      Alert("Unauthorized account");
+      return(INIT_FAILED);
+   }
+}
 //+------------------------------------------------------------------+
 //| Expert deinitialization function                                 |
 //+------------------------------------------------------------------+
