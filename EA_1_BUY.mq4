@@ -212,18 +212,27 @@ void uniformPointCalculator_buy(){
    nextTPSL = highestlot_buy + nextTPSL*_Point;
    
    //loop through all positions that are currently open
-   for(int i = OrdersTotal()-1; i >= 0; i--){
-      /**get the details from the current position such as opening price, lot size, and position id 
-         so we can modify it*/
-      OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-      if(OrderMagicNumber() == magic_num){
-         int posTicket = OrderTicket();
-         double close_lot = OrderLots();
-         if (Ask > nextTPSL){
+   if (Ask > nextTPSL){
+      for(int i = OrdersTotal()-1; i >= 0; i--){
+         /**get the details from the current position such as opening price, lot size, and position id 
+            so we can modify it*/
+         OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
+         if(OrderMagicNumber() == magic_num){
+            int posTicket = OrderTicket();
+            double close_lot = OrderLots();
             OrderClose(posTicket, close_lot, Ask, 50);
-         }else{
+         }        
+      }
+   }else{
+      for(int i = OrdersTotal()-1; i >= 0; i--){
+         /**get the details from the current position such as opening price, lot size, and position id 
+            so we can modify it*/
+         OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
+         if(OrderMagicNumber() == magic_num){
+            int posTicket = OrderTicket();
             OrderModify(posTicket, NULL, NULL, nextTPSL, NULL);
-         }
-      }        
+         }        
+      }   
    }    
 }
+
