@@ -7,26 +7,7 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #property strict
-//+------------------------------------------------------------------+
-//| Expert initialization function                                   |
-//+------------------------------------------------------------------+
-int OnInit()
-  {  
-//---
-   return(INIT_SUCCEEDED);
-  }
-//+------------------------------------------------------------------+
-//| Expert deinitialization function                                 |
-//+------------------------------------------------------------------+
-void OnDeinit(const int reason)
-  {
-//---
-  }
-//+------------------------------------------------------------------+
-//| Expert tick function                                             |
-//+------------------------------------------------------------------+
 
-//+------------------------------------------------------------------+
 datetime globalbartime;
 input double ls = 0.01;
 input int magic_num = 001; 
@@ -114,21 +95,19 @@ void onBar_buy(){
       // check if trades open is only one then call the function to open the second position
       if((num_2 <= num_firstlot)&&((highestlot_buy - interval*_Point) >= Ask)){
          //call the function and pass the following arguments into it
-         if((Ask - Bid) < spread){
-            OrderSend(_Symbol, OP_BUY, lot, Ask, 50, 0, 0, NULL, magic_num);
-            thrd_highestlot_buy = sec_highestlot_buy;
-            sec_highestlot_buy = highestlot_buy;
-            highestlot_buy = Ask;
-            for(int i = OrdersTotal()-1; i >= 0; i--){ 
-               OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-               if(OrderMagicNumber() == magic_num)break;   
-            }
-            int newTicket = OrderTicket();
-            if (Ask > firstTP){
-               OrderClose(newTicket, lot, Ask, 50);
-            }else{
-               OrderModify(newTicket, NULL, NULL, firstTP, NULL);
-            }
+         OrderSend(_Symbol, OP_BUY, lot, Ask, 50, 0, 0, NULL, magic_num);
+         thrd_highestlot_buy = sec_highestlot_buy;
+         sec_highestlot_buy = highestlot_buy;
+         highestlot_buy = Ask;
+         for(int i = OrdersTotal()-1; i >= 0; i--){ 
+            OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
+            if(OrderMagicNumber() == magic_num)break;   
+         }
+         int newTicket = OrderTicket();
+         if (Ask > firstTP){
+            OrderClose(newTicket, lot, Ask, 50);
+         }else{
+            OrderModify(newTicket, NULL, NULL, firstTP, NULL);
          }
       }else{
          // check if trades open is greater than or equals to two, then call the function to open subsequent positions
@@ -147,56 +126,51 @@ void onBar_buy(){
           }
          if(num_2 > num_firstlot){
             if(((highestlot_buy - interval*_Point) >= Ask) && (latestLot_buy < lotlimit)){
-               if((Ask - Bid) < spread)
-                  OrderSend(_Symbol, OP_BUY, latestLot_buy, Ask, 50, 0, 0, NULL, magic_num);
-                  thrd_highestlot_buy = sec_highestlot_buy;
-                  sec_highestlot_buy = highestlot_buy;
-                  highestlot_buy = Ask;
-                  /** call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
-                  the argument of the first open price*/
-                  uniformPointCalculator_buy();
+               OrderSend(_Symbol, OP_BUY, latestLot_buy, Ask, 50, 0, 0, NULL, magic_num);
+               thrd_highestlot_buy = sec_highestlot_buy;
+               sec_highestlot_buy = highestlot_buy;
+               highestlot_buy = Ask;
+               /** call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
+               the argument of the first open price*/
+               uniformPointCalculator_buy();
             }else{
                if(((highestlot_buy - interval*_Point) >= Ask) && (latestLot_buy > lotlimit)){
                   if (numofmultiples_buy == 0){
-                     if ((Ask - Bid) < spread){
-                        newLot_buy = OrderLots();
+                     newLot_buy = OrderLots();
+                     newLot_buy = newLot_buy*mult_fact;
+                     identifier_buy = numofmultiples_buy+1;
+                     loop = MathCeil(newLot_buy/lotlimit);
+                     for(int i=1; i<=loop; i++){
+                        if(i == loop){
+                           double lastLot_buy = newLot_buy - (lotlimit * (i-1));
+                           OrderSend(_Symbol, OP_BUY, NormalizeDouble(lastLot_buy, 2), Ask, 50, 0, 0, identifier_buy, magic_num);
+                        }else{
+                           OrderSend(_Symbol, OP_BUY, lotlimit, Ask, 50, 0, 0, identifier_buy, magic_num);
+                        }    
+                     }
+                     thrd_highestlot_buy = sec_highestlot_buy;
+                     sec_highestlot_buy = highestlot_buy;
+                     highestlot_buy = Ask;
+                     numofmultiples_buy += 1;
+                     uniformPointCalculator_buy();
+                   }else{
+                     if (numofmultiples_buy > 0){
                         newLot_buy = newLot_buy*mult_fact;
                         identifier_buy = numofmultiples_buy+1;
                         loop = MathCeil(newLot_buy/lotlimit);
                         for(int i=1; i<=loop; i++){
                            if(i == loop){
-                              double lastLot_buy = newLot_buy - (lotlimit * (i-1));
+                              double lastLot_buy = newLot_buy - (lotlimit * (loop-1));
                               OrderSend(_Symbol, OP_BUY, NormalizeDouble(lastLot_buy, 2), Ask, 50, 0, 0, identifier_buy, magic_num);
                            }else{
                               OrderSend(_Symbol, OP_BUY, lotlimit, Ask, 50, 0, 0, identifier_buy, magic_num);
-                            }    
+                           }
                         }
                         thrd_highestlot_buy = sec_highestlot_buy;
                         sec_highestlot_buy = highestlot_buy;
                         highestlot_buy = Ask;
                         numofmultiples_buy += 1;
                         uniformPointCalculator_buy();
-                     }
-                   }else{
-                     if (numofmultiples_buy > 0){
-                        if ((Ask - Bid) < spread){
-                           newLot_buy = newLot_buy*mult_fact;
-                           identifier_buy = numofmultiples_buy+1;
-                           loop = MathCeil(newLot_buy/lotlimit);
-                           for(int i=1; i<=loop; i++){
-                              if(i == loop){
-                                 double lastLot_buy = newLot_buy - (lotlimit * (loop-1));
-                                 OrderSend(_Symbol, OP_BUY, NormalizeDouble(lastLot_buy, 2), Ask, 50, 0, 0, identifier_buy, magic_num);
-                              }else{
-                                 OrderSend(_Symbol, OP_BUY, lotlimit, Ask, 50, 0, 0, identifier_buy, magic_num);
-                               }
-                           }
-                           thrd_highestlot_buy = sec_highestlot_buy;
-                           sec_highestlot_buy = highestlot_buy;
-                           highestlot_buy = Ask;
-                           numofmultiples_buy += 1;
-                           uniformPointCalculator_buy();
-                       }
                     }
                  }
               }    

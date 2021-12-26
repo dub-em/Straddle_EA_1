@@ -9,15 +9,13 @@
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
-int OnInit(){
-   if(AccountInfoInteger(ACCOUNT_LOGIN) == 1601948680){
-      Alert("Authorization of account was successfull");
-      return(INIT_SUCCEEDED);
-   }else{
-      Alert("Unauthorized account");
-      return(INIT_FAILED);
-   }
-}
+int OnInit()
+  {
+//---
+   
+//---
+   return(INIT_SUCCEEDED);
+  }
 //+------------------------------------------------------------------+
 //| Expert deinitialization function                                 |
 //+------------------------------------------------------------------+
@@ -125,11 +123,10 @@ void onBar_sell(){
       // check if trades open is only one then call the function to open the second position
       if((num_2 <= num_firstlot)&&((highestlot_sell + interval*_Point) <= Bid)){
          //call the function and pass the following arguments into it
-         if((Ask - Bid) < spread)
-            trade.Sell(lot, NULL, Bid, NULL, firstTP, NULL);
-            thrd_highestlot_sell = sec_highestlot_sell;
-            sec_highestlot_sell = highestlot_sell;
-            highestlot_sell = Bid;
+         trade.Sell(lot, NULL, Bid, NULL, firstTP, NULL);
+         thrd_highestlot_sell = sec_highestlot_sell;
+         sec_highestlot_sell = highestlot_sell;
+         highestlot_sell = Bid;
       }else{
          // check if trades open is greater than or equals to two, then call the function to open subsequent positions
          for(int i = PositionsTotal()-1; i >= 0; i--){ 
@@ -148,56 +145,51 @@ void onBar_sell(){
          //open more positions
          if (num_2 > num_firstlot){
             if(((highestlot_sell + interval*_Point) <= Bid) && (latestLot_sell < lotlimit)){
-               if( (Ask - Bid) < spread)
-                  trade.Sell(latestLot_sell, NULL, Bid, NULL, NULL, NULL);
-                  thrd_highestlot_sell = sec_highestlot_sell;
-                  sec_highestlot_sell = highestlot_sell;
-                  highestlot_sell = Bid;
-                  /**call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
-                  the argument of the first open price*/
-                  uniformPointCalculator_sell();
+               trade.Sell(latestLot_sell, NULL, Bid, NULL, NULL, NULL);
+               thrd_highestlot_sell = sec_highestlot_sell;
+               sec_highestlot_sell = highestlot_sell;
+               highestlot_sell = Bid;
+               /**call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
+               the argument of the first open price*/
+               uniformPointCalculator_sell();
             }else{
                if(((highestlot_sell + interval*_Point) <= Bid) && (latestLot_sell > lotlimit)){
                   if (numofmultiples_sell == 0){
-                     if ((Ask - Bid) < spread){
-                        newLot_sell = PositionGetDouble(POSITION_VOLUME);
+                     newLot_sell = PositionGetDouble(POSITION_VOLUME);
+                     newLot_sell = newLot_sell*mult_fact;
+                     identifier_sell = numofmultiples_sell+1;
+                     loop = MathCeil(newLot_sell/lotlimit);
+                     for(int i=1; i<=loop; i++){
+                        if(i == loop){
+                           double lastLot_sell = newLot_sell - (lotlimit * (i-1));
+                           trade.Sell(NormalizeDouble(lastLot_sell, 2), NULL, Bid, NULL, NULL, identifier_sell);
+                        }else{
+                           trade.Sell(lotlimit, NULL, Bid, NULL, NULL, identifier_sell);
+                        }
+                     }
+                     thrd_highestlot_sell = sec_highestlot_sell;
+                     sec_highestlot_sell = highestlot_sell;
+                     highestlot_sell = Bid;
+                     numofmultiples_sell += 1;
+                     uniformPointCalculator_sell();
+                   }else{
+                     if (numofmultiples_sell > 0){
                         newLot_sell = newLot_sell*mult_fact;
                         identifier_sell = numofmultiples_sell+1;
                         loop = MathCeil(newLot_sell/lotlimit);
                         for(int i=1; i<=loop; i++){
                            if(i == loop){
-                              double lastLot_sell = newLot_sell - (lotlimit * (i-1));
+                              double lastLot_sell = newLot_sell - (lotlimit * (loop-1));
                               trade.Sell(NormalizeDouble(lastLot_sell, 2), NULL, Bid, NULL, NULL, identifier_sell);
                            }else{
                               trade.Sell(lotlimit, NULL, Bid, NULL, NULL, identifier_sell);
-                            }
+                           }
                         }
                         thrd_highestlot_sell = sec_highestlot_sell;
                         sec_highestlot_sell = highestlot_sell;
                         highestlot_sell = Bid;
                         numofmultiples_sell += 1;
                         uniformPointCalculator_sell();
-                     }
-                   }else{
-                     if (numofmultiples_sell > 0){
-                        if ((Ask - Bid) < spread){
-                           newLot_sell = newLot_sell*mult_fact;
-                           identifier_sell = numofmultiples_sell+1;
-                           loop = MathCeil(newLot_sell/lotlimit);
-                           for(int i=1; i<=loop; i++){
-                              if(i == loop){
-                                 double lastLot_sell = newLot_sell - (lotlimit * (loop-1));
-                                 trade.Sell(NormalizeDouble(lastLot_sell, 2), NULL, Bid, NULL, NULL, identifier_sell);
-                              }else{
-                                 trade.Sell(lotlimit, NULL, Bid, NULL, NULL, identifier_sell);
-                               }
-                           }
-                           thrd_highestlot_sell = sec_highestlot_sell;
-                           sec_highestlot_sell = highestlot_sell;
-                           highestlot_sell = Bid;
-                           numofmultiples_sell += 1;
-                           uniformPointCalculator_sell();
-                        }
                       }
                    }
                 }       
@@ -211,7 +203,6 @@ void onBar_sell(){
 void uniformPointCalculator_sell(){
    double nextTPSL = 56.231777683731956 + 0.3434495*(MathAbs(highestlot_sell-thrd_highestlot_sell)*multiplier) + 0.03663685*(MathAbs(sec_highestlot_sell-thrd_highestlot_sell)*multiplier) + 0.30681265*(MathAbs(highestlot_sell-sec_highestlot_sell)*multiplier) + 0.01972324*(MathAbs(highestlot_sell-first_sell)*multiplier);  
    nextTPSL = highestlot_sell - nextTPSL*_Point;
-   
    double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);  
    
    //loop through all positions that are currently open

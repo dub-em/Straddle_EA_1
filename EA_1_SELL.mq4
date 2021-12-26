@@ -7,26 +7,7 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #property strict
-//+------------------------------------------------------------------+
-//| Expert initialization function                                   |
-//+------------------------------------------------------------------+
-int OnInit()
-  {  
-//---
-   return(INIT_SUCCEEDED);
-  }
-//+------------------------------------------------------------------+
-//| Expert deinitialization function                                 |
-//+------------------------------------------------------------------+
-void OnDeinit(const int reason)
-  {
-//---
-  }
-//+------------------------------------------------------------------+
-//| Expert tick function                                             |
-//+------------------------------------------------------------------+
 
-//+------------------------------------------------------------------+
 datetime globalbartime;
 input double ls = 0.01;
 input int magic_num = 002; 
@@ -114,21 +95,19 @@ void onBar_sell(){
       // check if trades open is only one then call the function to open the second position
       if((num_2 <= num_firstlot)&&((highestlot_sell + interval*_Point) <= Bid)){
          //call the function and pass the following arguments into it
-         if((Ask - Bid) < spread){
-            OrderSend(_Symbol, OP_SELL, lot, Bid, 50, 0, 0, NULL, magic_num);
-            thrd_highestlot_sell = sec_highestlot_sell;
-            sec_highestlot_sell = highestlot_sell;
-            highestlot_sell = Bid;
-            for(int i = OrdersTotal()-1; i >= 0; i--){ 
-               OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
-               if(OrderMagicNumber() == magic_num)break;   
-            }
-            int newTicket = OrderTicket();
-            if (Bid < firstTP){
-               OrderClose(newTicket, lot, Bid, 50);
-            }else{
-               OrderModify(newTicket, NULL, NULL, firstTP, NULL);
-            }
+         OrderSend(_Symbol, OP_SELL, lot, Bid, 50, 0, 0, NULL, magic_num);
+         thrd_highestlot_sell = sec_highestlot_sell;
+         sec_highestlot_sell = highestlot_sell;
+         highestlot_sell = Bid;
+         for(int i = OrdersTotal()-1; i >= 0; i--){ 
+            OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
+            if(OrderMagicNumber() == magic_num)break;   
+         }
+         int newTicket = OrderTicket();
+         if (Bid < firstTP){
+            OrderClose(newTicket, lot, Bid, 50);
+         }else{
+            OrderModify(newTicket, NULL, NULL, firstTP, NULL);
          }
       }else{
          // check if trades open is greater than or equals to two, then call the function to open subsequent positions
@@ -147,56 +126,51 @@ void onBar_sell(){
           }
          if(num_2 > num_firstlot){
             if(((highestlot_sell + interval*_Point) <= Bid) && (latestLot_sell < lotlimit)){
-               if((Ask - Bid) < spread)
-                  OrderSend(_Symbol, OP_SELL, latestLot_sell, Bid, 50, 0, 0, NULL, magic_num);
-                  thrd_highestlot_sell = sec_highestlot_sell;
-                  sec_highestlot_sell = highestlot_sell;
-                  highestlot_sell = Bid;
-                  /** call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
-                  the argument of the first open price*/
-                  uniformPointCalculator_sell();
+               OrderSend(_Symbol, OP_SELL, latestLot_sell, Bid, 50, 0, 0, NULL, magic_num);
+               thrd_highestlot_sell = sec_highestlot_sell;
+               sec_highestlot_sell = highestlot_sell;
+               highestlot_sell = Bid;
+               /** call the function that will be used to modify all the positions and adjust the stop loss / take profit and pass in
+               the argument of the first open price*/
+               uniformPointCalculator_sell();
             }else{
                if(((highestlot_sell + interval*_Point) <= Bid) && (latestLot_sell > lotlimit)){
                   if (numofmultiples_sell == 0){
-                     if ((Ask - Bid) < spread){
-                        newLot_sell = OrderLots();
+                     newLot_sell = OrderLots();
+                     newLot_sell = newLot_sell*mult_fact;
+                     identifier_sell = numofmultiples_sell+1;
+                     loop = MathCeil(newLot_sell/lotlimit);
+                     for(int i=1; i<=loop; i++){
+                        if(i == loop){
+                           double lastLot_sell = newLot_sell - (lotlimit * (i-1));
+                           OrderSend(_Symbol, OP_SELL, NormalizeDouble(lastLot_sell, 2), Bid, 50, 0, 0, identifier_sell, magic_num);
+                        }else{
+                           OrderSend(_Symbol, OP_SELL, lotlimit, Bid, 50, 0, 0, identifier_sell, magic_num);
+                        }    
+                     }
+                     thrd_highestlot_sell = sec_highestlot_sell;
+                     sec_highestlot_sell = highestlot_sell;
+                     highestlot_sell = Bid;
+                     numofmultiples_sell += 1;
+                     uniformPointCalculator_sell();
+                   }else{
+                     if (numofmultiples_sell > 0){
                         newLot_sell = newLot_sell*mult_fact;
                         identifier_sell = numofmultiples_sell+1;
                         loop = MathCeil(newLot_sell/lotlimit);
                         for(int i=1; i<=loop; i++){
                            if(i == loop){
-                              double lastLot_sell = newLot_sell - (lotlimit * (i-1));
+                              double lastLot_sell = newLot_sell - (lotlimit * (loop-1));
                               OrderSend(_Symbol, OP_SELL, NormalizeDouble(lastLot_sell, 2), Bid, 50, 0, 0, identifier_sell, magic_num);
                            }else{
                               OrderSend(_Symbol, OP_SELL, lotlimit, Bid, 50, 0, 0, identifier_sell, magic_num);
-                            }    
+                           }
                         }
                         thrd_highestlot_sell = sec_highestlot_sell;
                         sec_highestlot_sell = highestlot_sell;
                         highestlot_sell = Bid;
                         numofmultiples_sell += 1;
                         uniformPointCalculator_sell();
-                     }
-                   }else{
-                     if (numofmultiples_sell > 0){
-                        if ((Ask - Bid) < spread){
-                           newLot_sell = newLot_sell*mult_fact;
-                           identifier_sell = numofmultiples_sell+1;
-                           loop = MathCeil(newLot_sell/lotlimit);
-                           for(int i=1; i<=loop; i++){
-                              if(i == loop){
-                                 double lastLot_sell = newLot_sell - (lotlimit * (loop-1));
-                                 OrderSend(_Symbol, OP_SELL, NormalizeDouble(lastLot_sell, 2), Bid, 50, 0, 0, identifier_sell, magic_num);
-                              }else{
-                                 OrderSend(_Symbol, OP_SELL, lotlimit, Bid, 50, 0, 0, identifier_sell, magic_num);
-                               }
-                           }
-                           thrd_highestlot_sell = sec_highestlot_sell;
-                           sec_highestlot_sell = highestlot_sell;
-                           highestlot_sell = Bid;
-                           numofmultiples_sell += 1;
-                           uniformPointCalculator_sell();
-                       }
                     }
                  }
               }    
