@@ -86,10 +86,8 @@ void onBar_buy(){
       }else{
          //If market is still below our expected TP, then we can modify the position and set our TP.
          OrderModify(newTicket, NULL, NULL, newTp, NULL);
-      }
-      
+      }  
    }else{ 
-    
       /*Get the details such as opening price and position ID and TP from the first opened positions so we can modify
       the second position with the initial lot size*/
       double firstTP = 0;
@@ -123,7 +121,6 @@ void onBar_buy(){
             OrderModify(newTicket, NULL, NULL, firstTP, NULL);
          }
       }else{
-      
          //Check if trades open is greater than or equals to two, then call the function to open subsequent positions.
          for(int i = OrdersTotal()-1; i >= 0; i--){ 
             OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
@@ -143,7 +140,6 @@ void onBar_buy(){
             latestLot_buy = newLot_buy * mult_fact;
          }
          if(num_2 > num_firstlot){
-         
             /*Checks if the lotsizes have exceeded the lotlimit to know whether to use regular lotsizes or resort to opening
             multiple positions to maintain the hedging*/
             if(((highestlot_buy - interval*_Point) >= Ask) && (latestLot_buy < lotlimit)){
