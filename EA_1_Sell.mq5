@@ -205,7 +205,7 @@ void uniformPointCalculator_sell(){
    nextTPSL = highestlot_sell - nextTPSL*_Point;
    nextTPSL = bestTp(nextTPSL);
    double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);  
-   
+
    //loop through all positions that are currently open
    for(int i = PositionsTotal()-1; i >= 0; i--){
       //get the details from the current position such as opening price, lot size, and position id 
@@ -262,4 +262,5 @@ double bestTp(double currentTp){
       return currentTp;
    }
 }
+
 
