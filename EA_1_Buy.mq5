@@ -224,43 +224,18 @@ void uniformPointCalculator_buy(){
 }
 
 double bestTp(double currentTp){
-   double sum = 0; double newCalculatedTp = 0;
-   int u = 0;
+   double sum = 0; double add = 0;
    double finalAmountAtClose = 0;
-   double allLots = 0; double subtract = 0;
-   double lastThreeLots = 0; double posOpen[3] = {0,0,0}; double posVolume[3] = {0,0,0};
-   for(int i = PositionsTotal()-1; i >= 0; i--){
-      string symbols = PositionGetSymbol(i);
-      if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY) && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
-         finalAmountAtClose += ((currentTp - PositionGetDouble(POSITION_PRICE_OPEN))*10000) * (PositionGetDouble(POSITION_VOLUME)*10);
-         allLots += PositionGetDouble(POSITION_VOLUME);
-         if(u < 3){
-            subtract = finalAmountAtClose;
-            posOpen[u] = PositionGetDouble(POSITION_PRICE_OPEN);
-            posVolume[u] = NormalizeDouble((PositionGetDouble(POSITION_VOLUME)*10),2);
-         }
-         if(u == 2){
-            lastThreeLots = allLots;
-            u++;
-         }else{
-            u++;
+   do{
+      sum = 0;
+      currentTp = NormalizeDouble((currentTp + (add)*_Point), 5);
+      for(int i = PositionsTotal()-1; i >= 0; i--){
+         string symbols = PositionGetSymbol(i);
+         if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY) && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
+            finalAmountAtClose += ((currentTp - PositionGetDouble(POSITION_PRICE_OPEN))*10000) * (PositionGetDouble(POSITION_VOLUME)*10);
          }
       }
-   }
-   
-   if(finalAmountAtClose < 1){
-      int add = 50;
-      do{
-         sum = 0;
-         currentTp = NormalizeDouble((currentTp + (add)*_Point), 5);
-         for(int i=0; i<3; i++){
-            sum += ((currentTp - posOpen[i])*10000) * posVolume[i];
-         }
-         add += 50;
-      }while(sum < (-1* (finalAmountAtClose-subtract)) && !IsStopped());
-         
-      return currentTp;
-   }else{
-      return currentTp;
-   }
+      add += 50;
+   }while(finalAmountAtClose < 1 && !IsStopped());
+   return currentTp;
 }
