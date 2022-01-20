@@ -36,11 +36,11 @@ input double ls = 0.01;
 input int thisEAMagicNumber = 1111000;
 input int interval = 39;
 input int lotlimit = 100;
+input double mult_fact = 1.58;
 int numofmultiples_sell = 0;
 double newLot_sell = 0;
 int identifier_sell = 0;
 double loop = 0;
-double mult_fact = 1.58;
 double spread = 0.0003;
 int num_firstlot = 1;
 
