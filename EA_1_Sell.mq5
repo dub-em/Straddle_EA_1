@@ -223,10 +223,9 @@ void uniformPointCalculator_sell(){
 }
 
 double bestTp_sell(double currentTp){
-   double sum = 0; double add = 0;
+   double add = 0;
    double finalAmountAtClose = 0;
    do{
-      sum = 0;
       currentTp = NormalizeDouble((currentTp - (add)*_Point), 5);
       for(int i = PositionsTotal()-1; i >= 0; i--){
          string symbols = PositionGetSymbol(i);
@@ -236,6 +235,5 @@ double bestTp_sell(double currentTp){
       }
       add += 50;
    }while(finalAmountAtClose < 1 && !IsStopped());
-   
    return currentTp;
 }
