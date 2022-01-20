@@ -203,9 +203,9 @@ void onBar_sell(){
 void uniformPointCalculator_sell(){
    double nextTPSL = 56.231777683731956 + 0.3434495*(MathAbs(highestlot_sell-thrd_highestlot_sell)*multiplier) + 0.03663685*(MathAbs(sec_highestlot_sell-thrd_highestlot_sell)*multiplier) + 0.30681265*(MathAbs(highestlot_sell-sec_highestlot_sell)*multiplier) + 0.01972324*(MathAbs(highestlot_sell-first_sell)*multiplier);  
    nextTPSL = highestlot_sell - nextTPSL*_Point;
-   nextTPSL = bestTp(nextTPSL);
+   nextTPSL = bestTp_sell(nextTPSL);
    double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);  
-
+   
    //loop through all positions that are currently open
    for(int i = PositionsTotal()-1; i >= 0; i--){
       //get the details from the current position such as opening price, lot size, and position id 
@@ -222,45 +222,20 @@ void uniformPointCalculator_sell(){
    }    
 }
 
-double bestTp(double currentTp){
-   double sum = 0; double newCalculatedTp = 0;
-   int u = 0;
+double bestTp_sell(double currentTp){
+   double sum = 0; double add = 0;
    double finalAmountAtClose = 0;
-   double allLots = 0; double subtract = 0;
-   double lastThreeLots = 0; double posOpen[3] = {0,0,0}; double posVolume[3] = {0,0,0};
-   for(int i = PositionsTotal()-1; i >= 0; i--){
-      string symbols = PositionGetSymbol(i);
-      if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL) && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
-         finalAmountAtClose += ((PositionGetDouble(POSITION_PRICE_OPEN) - currentTp)*10000) * (PositionGetDouble(POSITION_VOLUME)*10);
-         allLots += PositionGetDouble(POSITION_VOLUME);
-         if(u < 3){
-            subtract = finalAmountAtClose;
-            posOpen[u] = PositionGetDouble(POSITION_PRICE_OPEN);
-            posVolume[u] = NormalizeDouble((PositionGetDouble(POSITION_VOLUME)*10),2);
-         }
-         if(u == 2){
-            lastThreeLots = allLots;
-            u++;
-         }else{
-            u++;
+   do{
+      sum = 0;
+      currentTp = NormalizeDouble((currentTp - (add)*_Point), 5);
+      for(int i = PositionsTotal()-1; i >= 0; i--){
+         string symbols = PositionGetSymbol(i);
+         if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_SELL) && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
+            finalAmountAtClose += ((PositionGetDouble(POSITION_PRICE_OPEN) - currentTp)*10000) * (PositionGetDouble(POSITION_VOLUME)*10);
          }
       }
-   }
+      add += 50;
+   }while(finalAmountAtClose < 1 && !IsStopped());
    
-   if(finalAmountAtClose < 1){
-      int add = 50;
-      do{
-         sum = 0;
-         currentTp = NormalizeDouble((currentTp - add*_Point), 5);
-         for(int i=0; i<3; i++){
-            sum += ((posOpen[i] - currentTp)*10000) * posVolume[i];
-         }
-         add += 50;
-      }while(sum < (-1* (finalAmountAtClose-subtract)) && !IsStopped());
-      return currentTp;
-   }else{
-      return currentTp;
-   }
+   return currentTp;
 }
-
-

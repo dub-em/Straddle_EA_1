@@ -199,12 +199,11 @@ void onBar_buy(){
 }
    
 
-
 //defining the function that modifies all the open trades
 void uniformPointCalculator_buy(){
    double nextTPSL = 56.231777683731956 + 0.3434495*(MathAbs(highestlot_buy-thrd_highestlot_buy)*multiplier) + 0.03663685*(MathAbs(sec_highestlot_buy-thrd_highestlot_buy)*multiplier) + 0.30681265*(MathAbs(highestlot_buy-sec_highestlot_buy)*multiplier) + 0.01972324*(MathAbs(highestlot_buy-first_buy)*multiplier);  
    nextTPSL = highestlot_buy + nextTPSL*_Point;
-   nextTPSL = bestTp(nextTPSL);
+   nextTPSL = bestTp_buy(nextTPSL);
    double Ask=NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);
    
    //loop through all positions that are currently open
@@ -223,7 +222,7 @@ void uniformPointCalculator_buy(){
    }    
 }
 
-double bestTp(double currentTp){
+double bestTp_buy(double currentTp){
    double sum = 0; double add = 0;
    double finalAmountAtClose = 0;
    do{
@@ -237,5 +236,6 @@ double bestTp(double currentTp){
       }
       add += 50;
    }while(finalAmountAtClose < 1 && !IsStopped());
+   
    return currentTp;
 }
