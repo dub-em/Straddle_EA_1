@@ -207,18 +207,26 @@ void uniformPointCalculator_buy(){
    double Ask=NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);
    
    //loop through all positions that are currently open
-   for(int i = PositionsTotal()-1; i >= 0; i--){
-      //get the details from the current position such as opening price, lot size, and position id 
-      //so we can modify it
-      string symbols = PositionGetSymbol(i);
-      if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY) && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
-         ulong posTicket = PositionGetInteger(POSITION_TICKET);
-         if (Ask > nextTPSL){
+   if (Ask > nextTPSL){
+      for(int i = PositionsTotal()-1; i >= 0; i--){
+         //get the details from the current position such as opening price, lot size, and position id 
+         //so we can modify it
+         string symbols = PositionGetSymbol(i);
+         if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY) && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
+            ulong posTicket = PositionGetInteger(POSITION_TICKET);
             trade.PositionClose(posTicket);
-         }else{
-            trade.PositionModify(posTicket, 0, nextTPSL);
          }
       }        
+   }else{
+      for(int i = PositionsTotal()-1; i >= 0; i--){
+         //get the details from the current position such as opening price, lot size, and position id 
+         //so we can modify it
+         string symbols = PositionGetSymbol(i);
+         if((PositionGetInteger(POSITION_TYPE) == ORDER_TYPE_BUY) && (PositionGetInteger(POSITION_MAGIC) == thisEAMagicNumber)){
+            ulong posTicket = PositionGetInteger(POSITION_TICKET);
+            trade.PositionModify(posTicket, 0, nextTPSL);
+         }
+      }
    }    
 }
 
