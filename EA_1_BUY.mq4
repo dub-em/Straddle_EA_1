@@ -13,11 +13,11 @@ input double ls = 0.01; //decalres the starting lotsize, which is an input.
 input int magic_num = 001; //declares a distinct magic number for all trades executed by a unique instance of the EA.
 input int interval = 39; //declares the interval between consecutive trades.
 input int lotlimit = 100; //declares the lotlimit of the account being traded on (dependent on the Broker).
+input double mult_fact = 1.58;
 int numofmultiples_buy = 0;
 double newLot_buy = 0;
 int identifier_buy = 0;
 double loop = 0;
-double mult_fact = 1.58;
 int num_firstlot = 1; //declares the number of subsequent positions after the first position initiated with the starting lot.
 
 // Variables used to store the three highest positions for quick reference
@@ -212,6 +212,7 @@ void uniformPointCalculator_buy(){
    
    double nextTPSL = 56.231777683731956 + 0.3434495*(MathAbs(highestlot_buy-thrd_highestlot_buy)*multiplier) + 0.03663685*(MathAbs(sec_highestlot_buy-thrd_highestlot_buy)*multiplier) + 0.30681265*(MathAbs(highestlot_buy-sec_highestlot_buy)*multiplier) + 0.01972324*(MathAbs(highestlot_buy-first_buy)*multiplier);  
    nextTPSL = highestlot_buy + nextTPSL*_Point;
+   nextTPSL = bestTp_buy(nextTPSL); //Adjusts the uniform TP incase the current one will result in loss.
    
    //Loop through all positions that are currently open
    if (Ask > nextTPSL){
@@ -240,4 +241,21 @@ void uniformPointCalculator_buy(){
          }        
       }   
    }    
+}
+
+//Adjusts the uniform TP incase the current one will result in loss.
+double bestTp_buy(double currentTp){
+   double add = 0;
+   double finalAmountAtClose = 0;
+   do{
+      currentTp = NormalizeDouble((currentTp + (add)*_Point), 5);
+      for(int i = OrdersTotal()-1; i >= 0; i--){
+         OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
+         if(OrderMagicNumber() == magic_num){
+            finalAmountAtClose += ((currentTp - OrderOpenPrice())*10000) * (OrderLots()*10);
+         }
+      }
+      add += 50;
+   }while(finalAmountAtClose < 1 && !IsStopped());
+   return currentTp;
 }
