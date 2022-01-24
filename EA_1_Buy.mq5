@@ -34,7 +34,7 @@ CTrade trade;
 datetime globalbartime;
 input double ls = 0.01;
 input int thisEAMagicNumber = 1111000;
-int avgInterval;
+input int interval = 39;
 input int lotlimit = 100;
 input double mult_fact = 1.58;
 int numofmultiples_buy = 0;
@@ -57,33 +57,14 @@ void OnTick(){
    trade.SetExpertMagicNumber(thisEAMagicNumber);
    datetime rightbartime = iTime(_Symbol,_Period, 0);
    if(rightbartime != globalbartime){
-      MqlRates priceInfo[];
-      CopyRates(_Symbol, PERIOD_CURRENT, 0, 3, priceInfo);
-      ArraySetAsSeries(priceInfo, true);
-      
-      firtsInterval = (priceInfo[1].high - priceInfo[1].low);
-      secondInterval = (priceInfo[2].high - priceInfo[2].low);
-      avg = ((secondInterval + firtsInterval)/2)*100000;
-      if (avg < 35) {avgInterval = 20;}
-      if (avg < 40) {avgInterval = 25;}
-      if (avg < 45) {avgInterval = 30;}
-      if (avg < 50) {avgInterval = 35;}
-      if (avg < 55) {avgInterval = 40;}  
-      if (avg < 60) {avgInterval = 45;} 
-      if (avg < 65) {avgInterval = 50;} 
-      if (avg >= 65) {avgInterval = 55;} 
       //if there is a new bar run the main function
-      //onBar_buy();
-      onBar_buy(avgInterval);
+      onBar_buy();
       globalbartime = rightbartime;
    } 
 }
 
-double firtsInterval;
-double secondInterval;
-int avg;
 //the function containing all the logic
-void onBar_buy(double interval = 39){
+void onBar_buy(){
    //get the bid and ask price
    double Ask=NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);
    double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);
