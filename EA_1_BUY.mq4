@@ -14,11 +14,11 @@ input int magic_num = 001; //declares a distinct magic number for all trades exe
 input int interval = 39; //declares the interval between consecutive trades.
 input int lotlimit = 100; //declares the lotlimit of the account being traded on (dependent on the Broker).
 input double mult_fact = 1.58;
+input int num_firstlot = 1; //declares the number of subsequent positions after the first position initiated with the starting lot.
 int numofmultiples_buy = 0;
 double newLot_buy = 0;
 int identifier_buy = 0;
 double loop = 0;
-int num_firstlot = 1; //declares the number of subsequent positions after the first position initiated with the starting lot.
 
 // Variables used to store the three highest positions for quick reference
 double multiplier = 100000;

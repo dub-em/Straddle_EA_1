@@ -6,27 +6,7 @@
 #property copyright "Copyright 2021, The Presence"
 #property link      "https://www.mql5.com"
 #property version   "1.00"
-//+------------------------------------------------------------------+
-//| Expert initialization function                                   |
-//+------------------------------------------------------------------+
-int OnInit()
-  {
-//---
-   
-//---
-   return(INIT_SUCCEEDED);
-  }
-//+------------------------------------------------------------------+
-//| Expert deinitialization function                                 |
-//+------------------------------------------------------------------+
-void OnDeinit(const int reason)
-  {
-//---
-   
-  }
-//+------------------------------------------------------------------+
-//| Expert tick function                                             |
-//+------------------------------------------------------------------+
+
 #include<Trade\Trade.mqh>
 CTrade trade;
 //EURUSD_OLD
@@ -37,12 +17,12 @@ input int thisEAMagicNumber = 1111000;
 input int interval = 39;
 input int lotlimit = 100;
 input double mult_fact = 1.58;
+input int num_firstlot = 1;
 int numofmultiples_buy = 0;
 double newLot_buy = 0;
 int identifier_buy = 0;
 double loop = 0;
 double spread = 0.0003;
-int num_firstlot = 1;
 
 // Variables used to store the three highest positions for quick reference
 double multiplier = 100000;
